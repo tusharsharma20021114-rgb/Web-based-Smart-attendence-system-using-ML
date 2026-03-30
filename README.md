@@ -9,7 +9,7 @@
 An intelligent, automated attendance system leveraging facial recognition technology to eliminate manual attendance tracking. Built with Python, OpenCV, and deep learning, this system achieves approximately 85% accuracy under optimal lighting conditions. The system supports multiple subjects/lectures and integrates with MongoDB for robust data management.
 
 **Author:** Tushar Sharma  
-**Repository:** [tusharsharma20021114/rgbWeb-based-Smart-attendence-system-using-ML](https://github.com/tusharsharma20021114/rgbWeb-based-Smart-attendence-system-using-ML)
+**Repository:** [tusharsharma20021114-rgb/Web-based-Smart-attendence-system-using-ML](https://github.com/tusharsharma20021114-rgb/Web-based-Smart-attendence-system-using-ML)
 
 ---
 
@@ -77,8 +77,8 @@ pip install -r Requirements/GPU_Req.txt
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/tusharsharma20021114/rgbWeb-based-Smart-attendence-system-using-ML.git
-cd rgbWeb-based-Smart-attendence-system-using-ML
+git clone https://github.com/tusharsharma20021114-rgb/Web-based-Smart-attendence-system-using-ML.git
+cd Web-based-Smart-attendence-system-using-ML
 ```
 
 2. Install dependencies:
@@ -376,8 +376,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## **Author**
 
 **Tushar Sharma**  
-GitHub: [@tusharsharma20021114](https://github.com/tusharsharma20021114)  
-Repository: [rgbWeb-based-Smart-attendence-system-using-ML](https://github.com/tusharsharma20021114/rgbWeb-based-Smart-attendence-system-using-ML)
+GitHub: [@tusharsharma20021114-rgb](https://github.com/tusharsharma20021114-rgb)  
+Repository: [Web-based-Smart-attendence-system-using-ML](https://github.com/tusharsharma20021114-rgb/Web-based-Smart-attendence-system-using-ML)
 
 ---
 
@@ -394,4 +394,4 @@ Repository: [rgbWeb-based-Smart-attendence-system-using-ML](https://github.com/t
 
 If you find this project helpful, please ⭐ star the repository!
 
-For issues and questions, please use the [GitHub Issues](https://github.com/tusharsharma20021114/rgbWeb-based-Smart-attendence-system-using-ML/issues) page.
+For issues and questions, please use the [GitHub Issues](https://github.com/tusharsharma20021114-rgb/Web-based-Smart-attendence-system-using-ML/issues) page.
