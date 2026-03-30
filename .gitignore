@@ -25,9 +25,10 @@ wheels/
 
 # Models and Data
 *.MODEL
-*.h5
 *.dat
 *.pkl
+# Allow pretrained model
+!PreTrained_model/facenet_keras.h5
 
 # Database
 *.db

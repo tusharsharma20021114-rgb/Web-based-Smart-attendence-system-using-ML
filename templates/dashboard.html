@@ -69,6 +69,12 @@
             </a>
             
             {% if role == 'admin' %}
+            <div class="action-card" onclick="downloadModels()">
+                <i class="fas fa-download"></i>
+                <h3>Download Models</h3>
+                <p>Download pretrained model files (first time setup)</p>
+            </div>
+            
             <div class="action-card" onclick="trainModel()">
                 <i class="fas fa-brain"></i>
                 <h3>Train Model</h3>
@@ -160,8 +166,30 @@
             
             if (result.success) {
                 showNotification('Model training started! Check console for progress.', 'success');
+                setTimeout(loadDashboard, 5000); // Refresh after 5 seconds
             } else {
                 showNotification('Training failed: ' + result.error, 'error');
+            }
+        } catch (error) {
+            showNotification('Error: ' + error.message, 'error');
+        }
+    }
+
+    // Download models function
+    async function downloadModels() {
+        if (!confirm('Download pretrained model files? This will take 1-2 minutes.')) return;
+        
+        showNotification('Downloading models...', 'info');
+        
+        try {
+            const response = await fetch('/api/download-models', { method: 'POST' });
+            const result = await response.json();
+            
+            if (result.success) {
+                showNotification(result.message, 'success');
+                setTimeout(loadDashboard, 60000); // Refresh after 1 minute
+            } else {
+                showNotification('Download failed: ' + result.error, 'error');
             }
         } catch (error) {
             showNotification('Error: ' + error.message, 'error');

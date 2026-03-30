@@ -433,6 +433,32 @@ def train_model():
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
+@app.route('/api/download-models', methods=['POST'])
+@login_required
+def download_models_endpoint():
+    try:
+        # Check if user is admin
+        if session.get('user_role') != 'admin':
+            return jsonify({'success': False, 'error': 'Admin access required'}), 403
+        
+        from download_models import ensure_models
+        from threading import Thread
+        
+        def download_task():
+            try:
+                result = ensure_models()
+                if result:
+                    load_models()
+                    print("✅ Models downloaded and loaded")
+            except Exception as e:
+                print(f"❌ Download error: {e}")
+        
+        Thread(target=download_task).start()
+        
+        return jsonify({'success': True, 'message': 'Model download started. Check back in 1-2 minutes.'})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 @app.route('/api/health', methods=['GET'])
 def health_check():
     model_status = {
