@@ -1,6 +1,6 @@
 """
 Face Recognition Module
-Author: Ushar Sharma
+Author: Tushar Sharma
 Description: Real-time face recognition and attendance marking
 """
 

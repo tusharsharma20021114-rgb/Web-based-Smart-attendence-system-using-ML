@@ -1,6 +1,6 @@
 """
 Smart Attendance System - Main UI
-Author: Ushar Sharma
+Author: Tushar Sharma
 Description: Tkinter-based GUI for face recognition attendance system
 """
 

@@ -1,6 +1,6 @@
 """
 Face Detection Module
-Author: Ushar Sharma
+Author: Tushar Sharma
 Description: Haar Cascade-based face detection
 """
 

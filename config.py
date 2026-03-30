@@ -1,6 +1,6 @@
 """
 Configuration file for Smart Attendance System
-Author: Ushar Sharma
+Author: Tushar Sharma
 """
 
 import os
@@ -9,7 +9,7 @@ class Config:
     # Application Settings
     APP_NAME = "Smart Attendance System"
     VERSION = "2.0.0"
-    AUTHOR = "Ushar Sharma"
+    AUTHOR = "Tushar Sharma"
     
     # MongoDB Settings
     MONGO_URI = os.getenv('MONGO_URI', 'mongodb://localhost:27017/')

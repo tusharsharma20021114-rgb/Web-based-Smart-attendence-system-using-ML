@@ -1,7 +1,7 @@
 # API Documentation
 
 ## Smart Attendance System REST API
-**Author:** Ushar Sharma  
+**Author:** Tushar Sharma  
 **Version:** 2.0.0
 
 ## Overview

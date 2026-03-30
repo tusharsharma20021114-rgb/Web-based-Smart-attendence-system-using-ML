@@ -1,6 +1,6 @@
 """
 Neural Network Architecture
-Author: Ushar Sharma
+Author: Tushar Sharma
 Description: Dense neural network for face classification
 """
 

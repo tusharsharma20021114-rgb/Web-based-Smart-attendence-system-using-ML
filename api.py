@@ -1,6 +1,6 @@
 """
 Flask REST API for Smart Attendance System
-Author: Ushar Sharma
+Author: Tushar Sharma
 """
 
 from flask import Flask, request, jsonify, send_file

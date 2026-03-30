@@ -1,6 +1,6 @@
 """
 FaceNet Embedding Extractor
-Author: Ushar Sharma
+Author: Tushar Sharma
 Description: Extract 128-dimensional face embeddings using pre-trained FaceNet
 """
 

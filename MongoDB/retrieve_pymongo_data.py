@@ -1,6 +1,6 @@
 """
 MongoDB Data Retrieval Module
-Author: Ushar Sharma
+Author: Tushar Sharma
 Description: Database operations for attendance management
 """
 

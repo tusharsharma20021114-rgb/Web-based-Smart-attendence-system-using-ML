@@ -1,6 +1,6 @@
 """
 Dataset Generation Module
-Author: Ushar Sharma
+Author: Tushar Sharma
 Description: Student enrollment and training image capture
 """
 

@@ -1,6 +1,6 @@
 """
 Modern Tkinter UI with Enhanced Styling
-Author: Ushar Sharma
+Author: Tushar Sharma
 """
 
 import tkinter as tk
@@ -35,7 +35,7 @@ COLORS = {
 class ModernAttendanceUI:
     def __init__(self, master):
         self.master = master
-        self.master.title("Smart Attendance System | Ushar Sharma")
+        self.master.title("Smart Attendance System | Tushar Sharma")
         self.master.configure(bg=COLORS['light'])
         
         # Make fullscreen

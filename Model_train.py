@@ -1,6 +1,6 @@
 """
 Model Training Module
-Author: Ushar Sharma
+Author: Tushar Sharma
 Description: Train face recognition model using FaceNet embeddings
 """
 

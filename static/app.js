@@ -1,6 +1,6 @@
 /**
  * Frontend JavaScript for Smart Attendance System
- * Author: Ushar Sharma
+ * Author: Tushar Sharma
  */
 
 const API_BASE_URL = 'http://localhost:5000/api';

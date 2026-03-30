@@ -1,6 +1,6 @@
 """
 Web Application with Flask Backend
-Author: Ushar Sharma
+Author: Tushar Sharma
 """
 
 from flask import Flask, render_template, request, jsonify, send_file
