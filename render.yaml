@@ -2,11 +2,13 @@ services:
   - type: web
     name: smart-attendance-system
     env: python
-    runtime: python-3.11.0
     region: oregon
     plan: free
+    branch: main
     buildCommand: pip install --upgrade pip setuptools wheel && pip install -r requirements.txt
     startCommand: gunicorn app:app --bind 0.0.0.0:$PORT --timeout 120 --workers 1 --preload
     envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
       - key: MONGODB_URI
         sync: false
