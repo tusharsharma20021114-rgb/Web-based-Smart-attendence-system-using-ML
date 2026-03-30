@@ -12,9 +12,9 @@ class Config:
     AUTHOR = "Tushar Sharma"
     
     # MongoDB Settings
-    MONGO_URI = os.getenv('MONGO_URI', 'mongodb://localhost:27017/')
+    MONGO_URI = os.getenv('MONGODB_URI', 'mongodb://localhost:27017/')
     MONGO_DB_NAME = 'students'
-    MONGO_TIMEOUT = 2000
+    MONGO_TIMEOUT = 5000
     
     # Model Settings
     MODEL_PATH = 'Model/Face_recognition.MODEL'

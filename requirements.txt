@@ -3,17 +3,17 @@ flask==3.0.0
 flask-cors==4.0.0
 werkzeug==3.0.0
 opencv-python-headless==4.8.1.78
-numpy==1.26.0
-pandas==2.1.0
+numpy==1.24.3
+pandas==2.0.3
 pymongo==4.5.0
 pillow==10.1.0
 gunicorn==21.2.0
 
 # Machine Learning
-tensorflow==2.15.0
-keras==2.15.0
+tensorflow==2.13.0
+keras==2.13.1
 mtcnn==0.1.1
 
 # Development
 python-dotenv==1.0.0
-setuptools==69.0.0
+setuptools==68.0.0
