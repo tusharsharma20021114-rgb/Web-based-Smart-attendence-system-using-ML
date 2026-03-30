@@ -12,6 +12,8 @@ gunicorn==21.2.0
 # Machine Learning
 tensorflow==2.15.0
 keras==2.15.0
+mtcnn==0.1.1
 
 # Development
 python-dotenv==1.0.0
+setuptools==69.0.0
