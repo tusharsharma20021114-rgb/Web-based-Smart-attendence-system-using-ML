@@ -59,25 +59,44 @@ pip install -r Requirements/GPU_Req.txt
 
 ## **🚀 Installation & Setup**
 
-### Local Development
+### Run Locally (5 Minutes)
 
-1. **Clone the repository:**
+1. **Clone & Install:**
 ```bash
 git clone https://github.com/tusharsharma20021114-rgb/Web-based-Smart-attendence-system-using-ML.git
 cd Web-based-Smart-attendence-system-using-ML
-```
-
-2. **Install dependencies:**
-```bash
 pip install -r requirements.txt
 ```
 
-3. **Start MongoDB:**
+2. **Start MongoDB:**
 ```bash
 sudo systemctl start mongodb
-# OR
-mongod
 ```
+
+3. **Run App:**
+```bash
+python3 app.py
+```
+
+4. **Access:** http://localhost:5000
+   - Login: `admin@admin.com` / `admin123`
+
+### 🌐 Deploy LIVE Online (FREE)
+
+**Want your app accessible from anywhere? Deploy it in 10 minutes!**
+
+📖 **Complete Guide:** [DEPLOY_LIVE.md](DEPLOY_LIVE.md)
+
+**Quick Deploy to Render:**
+1. Setup MongoDB Atlas (free)
+2. Go to render.com
+3. Connect your GitHub repo
+4. Add MongoDB connection string
+5. Deploy!
+
+**Your app will be live at:** `https://your-app.onrender.com`
+
+Anyone can access it, register, and use the system! 🎉
 
 4. **Run the web application:**
 ```bash
