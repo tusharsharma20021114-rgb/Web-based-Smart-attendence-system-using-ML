@@ -1,19 +1,18 @@
 {% extends "base.html" %}
 
-{% block title %}Take Attendance - Smart Attendance{% endblock %}
+{% block title %}Mark Attendance - Smart Attendance{% endblock %}
 
 {% block content %}
 <div class="page-container">
     <div class="page-header">
-        <h1><i class="fas fa-camera"></i> Take Attendance</h1>
-        <p>Mark attendance using face recognition</p>
+        <h1><i class="fas fa-check-circle"></i> Mark Attendance</h1>
+        <p>Use face recognition to mark your attendance</p>
     </div>
 
-    <div class="attendance-grid">
-        <!-- Subject Selection & Camera -->
+    <div class="single-card-container">
         <div class="card">
             <div class="card-header">
-                <i class="fas fa-video"></i> Live Recognition
+                <i class="fas fa-video"></i> Face Recognition
             </div>
             <div class="card-body">
                 <div class="form-group">
@@ -40,30 +39,18 @@
                     <div class="recognition-info" id="recognitionInfo" style="display: none;"></div>
                 </div>
 
+                <div class="recognized-list" id="recognizedList">
+                    <p class="empty-state">No faces recognized yet</p>
+                </div>
+
                 <div class="button-group">
-                    <button class="btn btn-success btn-lg" onclick="startRecognition()">
+                    <button class="btn btn-success btn-lg btn-block" onclick="startRecognition()">
                         <i class="fas fa-play"></i> Start Recognition
                     </button>
-                    <button class="btn btn-danger btn-lg" onclick="stopRecognition()">
+                    <button class="btn btn-danger btn-lg btn-block" onclick="stopRecognition()">
                         <i class="fas fa-stop"></i> Stop Recognition
                     </button>
                 </div>
-            </div>
-        </div>
-
-        <!-- Recognized Students -->
-        <div class="card">
-            <div class="card-header">
-                <i class="fas fa-check-circle"></i> Recognized Students
-            </div>
-            <div class="card-body">
-                <div id="recognizedList" class="recognized-list">
-                    <p class="empty-state">No students recognized yet</p>
-                </div>
-                
-                <button class="btn btn-primary btn-block" onclick="saveAttendance()">
-                    <i class="fas fa-save"></i> Save Attendance
-                </button>
             </div>
         </div>
     </div>
@@ -76,6 +63,7 @@
     let attendanceStream = null;
     let recognitionInterval = null;
     let recognizedStudents = new Set();
+    let attendanceMarked = false;
 
     async function startRecognition() {
         try {
@@ -86,10 +74,9 @@
             document.getElementById('attendanceOverlay').style.display = 'none';
             document.getElementById('recognitionInfo').style.display = 'block';
             
-            showNotification('Recognition started', 'success');
+            showNotification('Recognition started - Look at the camera', 'success');
             
-            // Start recognition loop
-            recognitionInterval = setInterval(recognizeFrame, 1000);
+            recognitionInterval = setInterval(recognizeFrame, 2000);
         } catch (error) {
             showNotification('Camera access denied: ' + error.message, 'error');
         }
@@ -102,15 +89,12 @@
             document.getElementById('attendanceOverlay').style.display = 'flex';
             document.getElementById('recognitionInfo').style.display = 'none';
         }
-        if (recognitionInterval) {
-            clearInterval(recognitionInterval);
-        }
+        if (recognitionInterval) clearInterval(recognitionInterval);
     }
 
     async function recognizeFrame() {
         const subject = document.querySelector('input[name="subject"]:checked').value;
         
-        // Capture current frame
         attendanceCanvas.width = attendanceVideo.videoWidth;
         attendanceCanvas.height = attendanceVideo.videoHeight;
         attendanceCtx.drawImage(attendanceVideo, 0, 0);
@@ -126,7 +110,7 @@
             
             const result = await response.json();
             
-            if (result.success && result.recognized) {
+            if (result.success && result.recognized && !attendanceMarked) {
                 result.students.forEach(student => {
                     if (!recognizedStudents.has(student.name)) {
                         recognizedStudents.add(student.name);
@@ -137,13 +121,20 @@
                 document.getElementById('recognitionInfo').innerHTML = `
                     <div class="recognition-badge success">
                         <i class="fas fa-check-circle"></i> 
-                        ${result.students.length} face(s) detected
+                        Attendance Marked Successfully!
                     </div>
                 `;
-            } else {
+                
+                attendanceMarked = true;
+                showNotification('Attendance marked successfully!', 'success');
+                
+                setTimeout(() => {
+                    stopRecognition();
+                }, 3000);
+            } else if (!attendanceMarked) {
                 document.getElementById('recognitionInfo').innerHTML = `
                     <div class="recognition-badge warning">
-                        <i class="fas fa-search"></i> Scanning...
+                        <i class="fas fa-search"></i> Scanning for faces...
                     </div>
                 `;
             }
@@ -154,8 +145,6 @@
 
     function addRecognizedStudent(student) {
         const list = document.getElementById('recognizedList');
-        
-        // Remove empty state
         const emptyState = list.querySelector('.empty-state');
         if (emptyState) emptyState.remove();
         
@@ -170,22 +159,6 @@
             <i class="fas fa-check-circle" style="color: #28a745; font-size: 24px;"></i>
         `;
         list.appendChild(item);
-    }
-
-    async function saveAttendance() {
-        if (recognizedStudents.size === 0) {
-            showNotification('No students recognized yet', 'warning');
-            return;
-        }
-        
-        const subject = document.querySelector('input[name="subject"]:checked').value;
-        showNotification(`Attendance saved for ${recognizedStudents.size} students in ${subject}`, 'success');
-        
-        // Reset
-        setTimeout(() => {
-            recognizedStudents.clear();
-            document.getElementById('recognizedList').innerHTML = '<p class="empty-state">No students recognized yet</p>';
-        }, 2000);
     }
 </script>
 {% endblock %}

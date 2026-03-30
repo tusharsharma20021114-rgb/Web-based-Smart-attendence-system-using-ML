@@ -1,10 +1,12 @@
 """
-Main Flask Application for Smart Attendance System
+Smart Attendance System - Complete Web Application
 Author: Tushar Sharma
+Features: User Authentication, Student Registration, Attendance Marking
 """
 
-from flask import Flask, render_template, request, jsonify, Response, session
+from flask import Flask, render_template, request, jsonify, session, redirect, url_for
 from flask_cors import CORS
+from werkzeug.security import generate_password_hash, check_password_hash
 import os
 import cv2
 import numpy as np
@@ -12,30 +14,28 @@ from datetime import datetime
 import pandas as pd
 import pymongo
 import secrets
-import json
-from werkzeug.utils import secure_filename
 import base64
+from functools import wraps
 
 app = Flask(__name__)
 app.secret_key = secrets.token_hex(16)
 CORS(app)
-
-# Configuration
-UPLOAD_FOLDER = 'temp_uploads'
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 # MongoDB connection
 try:
     client = pymongo.MongoClient("mongodb://localhost:27017/", serverSelectionTimeoutMS=2000)
     client.server_info()
     db = client["students"]
+    users_db = db["users"]
     MONGO_AVAILABLE = True
+    print("✅ MongoDB connected")
 except:
     MONGO_AVAILABLE = False
     db = None
+    users_db = None
+    print("⚠️  MongoDB not available")
 
-# Load models on startup
+# Load models
 MODELS_LOADED = False
 recognition_model = None
 embedding_model = None
@@ -48,162 +48,223 @@ def load_models():
         from embedding import emb
         from FaceDetection.face_detection import face
         
-        recognition_model = load_model('Model/Face_recognition.MODEL')
-        embedding_model = emb()
-        face_detector = face()
-        MODELS_LOADED = True
-        print("✅ Models loaded successfully")
+        if os.path.exists('Model/Face_recognition.MODEL'):
+            recognition_model = load_model('Model/Face_recognition.MODEL')
+            embedding_model = emb()
+            face_detector = face()
+            MODELS_LOADED = True
+            print("✅ Models loaded")
+        else:
+            print("⚠️  Model not found - train first")
     except Exception as e:
-        print(f"⚠️  Models not loaded: {e}")
-        MODELS_LOADED = False
+        print(f"⚠️  Models error: {e}")
+
+# Authentication decorator
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'user_id' not in session:
+            return redirect(url_for('login'))
+        return f(*args, **kwargs)
+    return decorated_function
 
 # Routes
 @app.route('/')
 def index():
-    """Main dashboard page"""
-    return render_template('dashboard.html')
+    if 'user_id' in session:
+        return redirect(url_for('dashboard'))
+    return redirect(url_for('login'))
+
+@app.route('/login')
+def login():
+    return render_template('login.html')
+
+@app.route('/register')
+def register():
+    return render_template('register.html')
+
+@app.route('/dashboard')
+@login_required
+def dashboard():
+    user = session.get('user_name', 'User')
+    role = session.get('user_role', 'student')
+    return render_template('dashboard.html', user=user, role=role)
 
 @app.route('/enroll')
+@login_required
 def enroll_page():
-    """Student enrollment page"""
     return render_template('enroll.html')
 
 @app.route('/attendance')
+@login_required
 def attendance_page():
-    """Attendance marking page"""
     return render_template('attendance.html')
 
 @app.route('/records')
+@login_required
 def records_page():
-    """View attendance records"""
-    return render_template('records.html')
+    role = session.get('user_role', 'student')
+    return render_template('records.html', role=role)
 
-# API Endpoints
-@app.route('/api/health', methods=['GET'])
-def health_check():
-    """Health check endpoint"""
-    return jsonify({
-        'status': 'running',
-        'timestamp': datetime.now().isoformat(),
-        'model_loaded': MODELS_LOADED,
-        'mongodb_connected': MONGO_AVAILABLE
-    })
+@app.route('/logout')
+def logout():
+    session.clear()
+    return redirect(url_for('login'))
 
+# API - Authentication
+@app.route('/api/auth/register', methods=['POST'])
+def api_register():
+    try:
+        data = request.json
+        name = data.get('name')
+        email = data.get('email')
+        password = data.get('password')
+        roll_number = data.get('roll_number')
+        role = data.get('role', 'student')
+        
+        if not all([name, email, password]):
+            return jsonify({'success': False, 'error': 'All fields required'}), 400
+        
+        if not MONGO_AVAILABLE:
+            return jsonify({'success': False, 'error': 'Database not available'}), 503
+        
+        # Check if user exists
+        if users_db.find_one({'email': email}):
+            return jsonify({'success': False, 'error': 'Email already registered'}), 400
+        
+        # Create user
+        user = {
+            'name': name,
+            'email': email,
+            'password': generate_password_hash(password),
+            'roll_number': roll_number,
+            'role': role,
+            'created_at': datetime.now()
+        }
+        users_db.insert_one(user)
+        
+        # If student, also enroll in attendance system
+        if role == 'student' and roll_number:
+            mydict = {"Name": name, "Roll_number": roll_number, "Attendance": 0}
+            db.Hindi.insert_one(mydict.copy())
+            db.English.insert_one(mydict.copy())
+            
+            # Add to CSV
+            if os.path.exists("Students_Enrollment.csv"):
+                df = pd.read_csv("Students_Enrollment.csv")
+            else:
+                df = pd.DataFrame(columns=['Name', 'Roll Number'])
+            df = df.append({'Name': name, 'Roll Number': roll_number}, ignore_index=True)
+            df.to_csv("Students_Enrollment.csv", index=False)
+            
+            # Create directory
+            os.makedirs(f"people/{roll_number}{name}", exist_ok=True)
+        
+        return jsonify({'success': True, 'message': 'Registration successful'})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/auth/login', methods=['POST'])
+def api_login():
+    try:
+        data = request.json
+        email = data.get('email')
+        password = data.get('password')
+        
+        if not MONGO_AVAILABLE:
+            return jsonify({'success': False, 'error': 'Database not available'}), 503
+        
+        user = users_db.find_one({'email': email})
+        
+        if user and check_password_hash(user['password'], password):
+            session['user_id'] = str(user['_id'])
+            session['user_name'] = user['name']
+            session['user_email'] = user['email']
+            session['user_role'] = user.get('role', 'student')
+            session['roll_number'] = user.get('roll_number')
+            
+            return jsonify({
+                'success': True,
+                'user': {
+                    'name': user['name'],
+                    'email': user['email'],
+                    'role': user.get('role', 'student')
+                }
+            })
+        else:
+            return jsonify({'success': False, 'error': 'Invalid credentials'}), 401
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+# API - Students
 @app.route('/api/students', methods=['GET'])
+@login_required
 def get_students():
-    """Get all enrolled students"""
     try:
         if os.path.exists("Students_Enrollment.csv"):
             df = pd.read_csv("Students_Enrollment.csv")
             students = df.to_dict('records')
         else:
             students = []
-        
-        return jsonify({
-            'success': True,
-            'count': len(students),
-            'students': students
-        })
+        return jsonify({'success': True, 'count': len(students), 'students': students})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
-
-@app.route('/api/students/enroll', methods=['POST'])
-def enroll_student():
-    """Enroll a new student"""
+@app.route('/api/students/save-images', methods=['POST'])
+@login_required
+def save_student_images():
     try:
         data = request.json
-        name = data.get('name')
-        roll_no = data.get('roll_number')
+        images = data.get('images', [])
+        roll_number = session.get('roll_number')
+        name = session.get('user_name')
         
-        if not name or not roll_no:
-            return jsonify({'success': False, 'error': 'Name and roll number required'}), 400
+        if not roll_number:
+            return jsonify({'success': False, 'error': 'Roll number not found'}), 400
         
-        # Add to MongoDB
-        if MONGO_AVAILABLE:
-            mydict = {"Name": name, "Roll_number": roll_no, "Attendance": 0}
-            db.Hindi.insert_one(mydict.copy())
-            db.English.insert_one(mydict.copy())
-        
-        # Add to CSV
-        if os.path.exists("Students_Enrollment.csv"):
-            df = pd.read_csv("Students_Enrollment.csv")
-        else:
-            df = pd.DataFrame(columns=['Name', 'Roll Number'])
-        
-        df = df.append({'Name': name, 'Roll Number': roll_no}, ignore_index=True)
-        df.to_csv("Students_Enrollment.csv", index=False)
-        
-        # Create directory
-        path = f"people/{roll_no}{name}"
+        path = f"people/{roll_number}{name}"
         os.makedirs(path, exist_ok=True)
         
-        return jsonify({
-            'success': True,
-            'message': 'Student enrolled successfully',
-            'student': {'name': name, 'roll_number': roll_no}
-        })
+        for idx, img_data in enumerate(images, 1):
+            image_bytes = base64.b64decode(img_data.split(',')[1] if ',' in img_data else img_data)
+            nparr = np.frombuffer(image_bytes, np.uint8)
+            img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+            cv2.imwrite(f"{path}/{idx}.jpg", img)
+        
+        return jsonify({'success': True, 'message': f'{len(images)} images saved'})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
-@app.route('/api/students/save-image', methods=['POST'])
-def save_student_image():
-    """Save student training image"""
-    try:
-        data = request.json
-        roll_no = data.get('roll_number')
-        name = data.get('name')
-        image_data = data.get('image')
-        image_count = data.get('count', 1)
-        
-        if not all([roll_no, name, image_data]):
-            return jsonify({'success': False, 'error': 'Missing required fields'}), 400
-        
-        # Decode base64 image
-        image_bytes = base64.b64decode(image_data.split(',')[1] if ',' in image_data else image_data)
-        nparr = np.frombuffer(image_bytes, np.uint8)
-        img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-        
-        # Save image
-        path = f"people/{roll_no}{name}"
-        os.makedirs(path, exist_ok=True)
-        cv2.imwrite(f"{path}/{image_count}.jpg", img)
-        
-        return jsonify({
-            'success': True,
-            'message': f'Image {image_count} saved',
-            'count': image_count
-        })
-    except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
-
+# API - Attendance
 @app.route('/api/attendance/<subject>', methods=['GET'])
+@login_required
 def get_attendance(subject):
-    """Get attendance for a specific subject"""
     try:
         if not MONGO_AVAILABLE:
-            return jsonify({'success': False, 'error': 'MongoDB not available'}), 503
+            return jsonify({'success': False, 'error': 'Database not available'}), 503
         
         collection = db.Hindi if subject.lower() == 'hindi' else db.English
-        records = list(collection.find({}, {'_id': 0}))
         
-        return jsonify({
-            'success': True,
-            'subject': subject,
-            'count': len(records),
-            'records': records
-        })
+        # If student, show only their record
+        if session.get('user_role') == 'student':
+            roll_number = session.get('roll_number')
+            records = list(collection.find({'Roll_number': roll_number}, {'_id': 0}))
+        else:
+            records = list(collection.find({}, {'_id': 0}))
+        
+        return jsonify({'success': True, 'subject': subject, 'records': records})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/attendance/mark', methods=['POST'])
+@login_required
 def mark_attendance():
-    """Mark attendance from uploaded image"""
     try:
         if not MODELS_LOADED:
             load_models()
             if not MODELS_LOADED:
-                return jsonify({'success': False, 'error': 'Models not loaded'}), 500
+                return jsonify({'success': False, 'error': 'Models not loaded. Train model first.'}), 500
         
         data = request.json
         image_data = data.get('image')
@@ -217,7 +278,7 @@ def mark_attendance():
         nparr = np.frombuffer(image_bytes, np.uint8)
         frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
         
-        # Detect and recognize
+        # Detect faces
         det, coor = face_detector.detectFace(frame)
         
         if not det or len(det) == 0:
@@ -239,15 +300,26 @@ def mark_attendance():
             
             if confidence > 0.85:
                 people_list = sorted(os.listdir('people'))
-                students = {int(p[0])-1: p[1:] for p in people_list}
-                
-                if result in students:
-                    student_name = students[result]
-                    recognized_students.append({
-                        'name': student_name,
-                        'confidence': confidence,
-                        'roll_number': result + 1
-                    })
+                if people_list:
+                    students = {int(p[0])-1: p[1:] for p in people_list}
+                    
+                    if result in students:
+                        student_name = students[result]
+                        roll_num = result + 1
+                        
+                        # Update attendance in MongoDB
+                        if MONGO_AVAILABLE:
+                            collection = db.Hindi if subject == 'hindi' else db.English
+                            collection.update_one(
+                                {"Roll_number": str(roll_num)},
+                                {"$inc": {"Attendance": 1}}
+                            )
+                        
+                        recognized_students.append({
+                            'name': student_name,
+                            'confidence': confidence,
+                            'roll_number': roll_num
+                        })
         
         return jsonify({
             'success': True,
@@ -258,8 +330,8 @@ def mark_attendance():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/stats', methods=['GET'])
+@login_required
 def get_statistics():
-    """Get attendance statistics"""
     try:
         stats = {}
         
@@ -282,23 +354,47 @@ def get_statistics():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/train', methods=['POST'])
+@login_required
 def train_model():
-    """Trigger model training"""
     try:
+        # Check if user is admin
+        if session.get('user_role') != 'admin':
+            return jsonify({'success': False, 'error': 'Admin access required'}), 403
+        
         from Model_train import Model_Training
         from threading import Thread
         
         Thread(target=Model_Training).start()
         
-        return jsonify({
-            'success': True,
-            'message': 'Model training started in background'
-        })
+        return jsonify({'success': True, 'message': 'Model training started'})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
+@app.route('/api/health', methods=['GET'])
+def health_check():
+    return jsonify({
+        'status': 'running',
+        'timestamp': datetime.now().isoformat(),
+        'model_loaded': MODELS_LOADED,
+        'mongodb_connected': MONGO_AVAILABLE
+    })
+
 if __name__ == '__main__':
     print("🚀 Smart Attendance System Starting...")
-    print("📡 Access at: http://localhost:5000")
+    print("📡 Web App: http://localhost:5000")
+    print("👤 Default Admin: admin@admin.com / admin123")
+    
+    # Create default admin if not exists
+    if MONGO_AVAILABLE and users_db.count_documents({}) == 0:
+        admin = {
+            'name': 'Admin',
+            'email': 'admin@admin.com',
+            'password': generate_password_hash('admin123'),
+            'role': 'admin',
+            'created_at': datetime.now()
+        }
+        users_db.insert_one(admin)
+        print("✅ Default admin created")
+    
     load_models()
     app.run(debug=True, host='0.0.0.0', port=5000)

@@ -655,3 +655,106 @@ video {
     color: var(--primary);
     margin-bottom: 1rem;
 }
+
+
+/* Authentication Pages */
+.auth-page {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 2rem;
+}
+
+.auth-container {
+    width: 100%;
+    max-width: 450px;
+}
+
+.auth-card {
+    background: var(--light);
+    border-radius: var(--border-radius);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    overflow: hidden;
+}
+
+.auth-header {
+    background: linear-gradient(135deg, var(--primary) 0%, #a83f94 100%);
+    color: var(--light);
+    padding: 3rem 2rem;
+    text-align: center;
+}
+
+.auth-header i {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+}
+
+.auth-header h1 {
+    margin-bottom: 0.5rem;
+}
+
+.auth-form {
+    padding: 2rem;
+}
+
+.auth-footer {
+    text-align: center;
+    padding: 1.5rem;
+    background: #f8f9fa;
+    border-top: 1px solid #e0e0e0;
+}
+
+.auth-footer a {
+    color: var(--primary);
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.auth-footer a:hover {
+    text-decoration: underline;
+}
+
+.demo-credentials {
+    background: #fff3cd;
+    padding: 1rem;
+    margin: 1rem 2rem;
+    border-radius: 8px;
+    text-align: center;
+    font-size: 0.9rem;
+}
+
+.demo-credentials strong {
+    display: block;
+    margin-bottom: 0.5rem;
+}
+
+/* Single Card Container */
+.single-card-container {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+/* Enhanced Camera Container */
+.camera-container {
+    position: relative;
+    width: 100%;
+    background: #000;
+    border-radius: var(--border-radius);
+    overflow: hidden;
+    margin-bottom: 1.5rem;
+}
+
+.camera-container video {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
+/* Form Small Text */
+.form-group small {
+    display: block;
+    margin-top: 0.25rem;
+    color: var(--gray);
+    font-size: 0.85rem;
+}
