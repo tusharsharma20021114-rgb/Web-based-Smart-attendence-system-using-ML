@@ -53,8 +53,14 @@ def init_admin():
         except Exception as e:
             print(f"⚠️  Admin creation error: {e}")
 
-# Call init on module load
+# Initialize on startup
 init_admin()
+
+# Try to load models on startup
+try:
+    load_models()
+except Exception as e:
+    print(f"⚠️  Initial model load failed: {e}")
 
 # Load models
 MODELS_LOADED = False
@@ -65,20 +71,38 @@ face_detector = None
 def load_models():
     global recognition_model, embedding_model, face_detector, MODELS_LOADED
     try:
+        # Check if pretrained model exists
+        if not os.path.exists('PreTrained_model/facenet_keras.h5'):
+            print("⚠️  Pretrained model (facenet_keras.h5) not found")
+            return False
+        
+        # Check if face cascade exists
+        if not os.path.exists('FaceDetection/faces.xml'):
+            print("⚠️  Face cascade (faces.xml) not found")
+            return False
+        
         from keras.models import load_model
         from embedding import emb
         from FaceDetection.face_detection import face
         
+        # Load embedding model and face detector
+        embedding_model = emb()
+        face_detector = face()
+        print("✅ Embedding model and face detector loaded")
+        
+        # Load recognition model if it exists
         if os.path.exists('Model/Face_recognition.MODEL'):
             recognition_model = load_model('Model/Face_recognition.MODEL')
-            embedding_model = emb()
-            face_detector = face()
             MODELS_LOADED = True
-            print("✅ Models loaded")
+            print("✅ Recognition model loaded")
         else:
-            print("⚠️  Model not found - train first")
+            print("⚠️  Recognition model not found - train first")
+            MODELS_LOADED = False
+        
+        return True
     except Exception as e:
-        print(f"⚠️  Models error: {e}")
+        print(f"⚠️  Model loading error: {e}")
+        return False
 
 # Authentication decorator
 def login_required(f):
@@ -283,11 +307,27 @@ def get_attendance(subject):
 @app.route('/api/attendance/mark', methods=['POST'])
 @login_required
 def mark_attendance():
+    global MODELS_LOADED, recognition_model, embedding_model, face_detector
+    
     try:
+        # Try to load models if not loaded
         if not MODELS_LOADED:
+            print("Attempting to load models...")
             load_models()
-            if not MODELS_LOADED:
-                return jsonify({'success': False, 'error': 'Models not loaded. Train model first.'}), 500
+            
+        if not MODELS_LOADED or not recognition_model:
+            return jsonify({
+                'success': False, 
+                'error': 'Recognition model not available. Admin needs to train the model first.',
+                'action_required': 'train_model'
+            }), 503
+        
+        if not embedding_model or not face_detector:
+            return jsonify({
+                'success': False,
+                'error': 'Required models not loaded. Check if pretrained files exist.',
+                'action_required': 'check_files'
+            }), 503
         
         data = request.json
         image_data = data.get('image')
@@ -395,11 +435,20 @@ def train_model():
 
 @app.route('/api/health', methods=['GET'])
 def health_check():
+    model_status = {
+        'recognition_loaded': MODELS_LOADED,
+        'embedding_loaded': embedding_model is not None,
+        'face_detector_loaded': face_detector is not None,
+        'pretrained_exists': os.path.exists('PreTrained_model/facenet_keras.h5'),
+        'recognition_model_exists': os.path.exists('Model/Face_recognition.MODEL'),
+        'face_cascade_exists': os.path.exists('FaceDetection/faces.xml')
+    }
+    
     return jsonify({
         'status': 'running',
         'timestamp': datetime.now().isoformat(),
-        'model_loaded': MODELS_LOADED,
-        'mongodb_connected': MONGO_AVAILABLE
+        'mongodb_connected': MONGO_AVAILABLE,
+        'models': model_status
     })
 
 if __name__ == '__main__':

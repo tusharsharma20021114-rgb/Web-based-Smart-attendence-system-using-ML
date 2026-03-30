@@ -104,9 +104,27 @@
         try {
             // Get health status
             const health = await fetch('/api/health').then(r => r.json());
-            document.getElementById('modelStatus').textContent = health.model_loaded ? '✅' : '❌';
+            
+            // Update model status
+            const modelLoaded = health.models?.recognition_loaded || false;
+            document.getElementById('modelStatus').textContent = modelLoaded ? '✅' : '❌';
             document.getElementById('mongoStatus').textContent = health.mongodb_connected ? '✅ Connected' : '❌ Disconnected';
-            document.getElementById('modelInfo').textContent = health.model_loaded ? '✅ Loaded' : '⚠️ Not Loaded';
+            
+            // Detailed model info
+            if (health.models) {
+                const m = health.models;
+                let modelInfo = '';
+                if (m.recognition_loaded) {
+                    modelInfo = '✅ Recognition Model Loaded';
+                } else if (m.recognition_model_exists) {
+                    modelInfo = '⚠️ Model exists but not loaded';
+                } else if (m.pretrained_exists && m.face_cascade_exists) {
+                    modelInfo = '⚠️ Ready to train';
+                } else {
+                    modelInfo = '❌ Missing files';
+                }
+                document.getElementById('modelInfo').textContent = modelInfo;
+            }
             
             // Get students
             const students = await fetch('/api/students').then(r => r.json());
