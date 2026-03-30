@@ -23,17 +23,18 @@ CORS(app)
 
 # MongoDB connection
 try:
-    client = pymongo.MongoClient("mongodb://localhost:27017/", serverSelectionTimeoutMS=2000)
+    MONGO_URI = os.getenv('MONGODB_URI', 'mongodb://localhost:27017/')
+    client = pymongo.MongoClient(MONGO_URI, serverSelectionTimeoutMS=5000)
     client.server_info()
     db = client["students"]
     users_db = db["users"]
     MONGO_AVAILABLE = True
     print("✅ MongoDB connected")
-except:
+except Exception as e:
     MONGO_AVAILABLE = False
     db = None
     users_db = None
-    print("⚠️  MongoDB not available")
+    print(f"⚠️  MongoDB not available: {e}")
 
 # Load models
 MODELS_LOADED = False
