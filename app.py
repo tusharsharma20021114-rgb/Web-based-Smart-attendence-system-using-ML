@@ -36,6 +36,26 @@ except Exception as e:
     users_db = None
     print(f"⚠️  MongoDB not available: {e}")
 
+# Initialize default admin on startup
+def init_admin():
+    if MONGO_AVAILABLE:
+        try:
+            if users_db.count_documents({'email': 'admin@admin.com'}) == 0:
+                admin = {
+                    'name': 'Admin',
+                    'email': 'admin@admin.com',
+                    'password': generate_password_hash('admin123'),
+                    'role': 'admin',
+                    'created_at': datetime.now()
+                }
+                users_db.insert_one(admin)
+                print("✅ Default admin created: admin@admin.com / admin123")
+        except Exception as e:
+            print(f"⚠️  Admin creation error: {e}")
+
+# Call init on module load
+init_admin()
+
 # Load models
 MODELS_LOADED = False
 recognition_model = None
@@ -155,7 +175,9 @@ def api_register():
                 df = pd.read_csv("Students_Enrollment.csv")
             else:
                 df = pd.DataFrame(columns=['Name', 'Roll Number'])
-            df = df.append({'Name': name, 'Roll Number': roll_number}, ignore_index=True)
+            
+            new_row = pd.DataFrame([{'Name': name, 'Roll Number': roll_number}])
+            df = pd.concat([df, new_row], ignore_index=True)
             df.to_csv("Students_Enrollment.csv", index=False)
             
             # Create directory
@@ -383,19 +405,26 @@ def health_check():
 if __name__ == '__main__':
     print("🚀 Smart Attendance System Starting...")
     print("📡 Web App: http://localhost:5000")
-    print("👤 Default Admin: admin@admin.com / admin123")
     
     # Create default admin if not exists
-    if MONGO_AVAILABLE and users_db.count_documents({}) == 0:
-        admin = {
-            'name': 'Admin',
-            'email': 'admin@admin.com',
-            'password': generate_password_hash('admin123'),
-            'role': 'admin',
-            'created_at': datetime.now()
-        }
-        users_db.insert_one(admin)
-        print("✅ Default admin created")
+    if MONGO_AVAILABLE:
+        try:
+            if users_db.count_documents({'email': 'admin@admin.com'}) == 0:
+                admin = {
+                    'name': 'Admin',
+                    'email': 'admin@admin.com',
+                    'password': generate_password_hash('admin123'),
+                    'role': 'admin',
+                    'created_at': datetime.now()
+                }
+                users_db.insert_one(admin)
+                print("✅ Default admin created: admin@admin.com / admin123")
+            else:
+                print("✅ Admin account exists")
+        except Exception as e:
+            print(f"⚠️  Admin creation error: {e}")
+    else:
+        print("⚠️  MongoDB not connected - cannot create admin")
     
     load_models()
     app.run(debug=True, host='0.0.0.0', port=5000)
