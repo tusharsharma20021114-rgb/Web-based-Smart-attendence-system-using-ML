@@ -1,17 +1,17 @@
 # Core Dependencies
-flask==2.3.0
+flask==3.0.0
 flask-cors==4.0.0
-werkzeug==2.3.0
-opencv-python-headless==4.8.0.74
-numpy==1.24.3
-pandas==2.0.3
+werkzeug==3.0.0
+opencv-python-headless==4.8.1.78
+numpy==1.26.0
+pandas==2.1.0
 pymongo==4.5.0
-pillow==10.0.0
+pillow==10.1.0
 gunicorn==21.2.0
 
 # Machine Learning
-tensorflow==2.13.0
-keras==2.13.1
+tensorflow==2.15.0
+keras==2.15.0
 
 # Development
 python-dotenv==1.0.0
