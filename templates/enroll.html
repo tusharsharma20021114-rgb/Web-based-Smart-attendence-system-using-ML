@@ -1,0 +1,240 @@
+{% extends "base.html" %}
+
+{% block title %}Enroll Student - Smart Attendance{% endblock %}
+
+{% block content %}
+<div class="page-container">
+    <div class="page-header">
+        <h1><i class="fas fa-user-plus"></i> Student Enrollment</h1>
+        <p>Enroll new students and capture training images</p>
+    </div>
+
+    <div class="enroll-grid">
+        <!-- Enrollment Form -->
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-id-card"></i> Student Information
+            </div>
+            <div class="card-body">
+                <form id="enrollForm">
+                    <div class="form-group">
+                        <label for="rollNumber"><i class="fas fa-hashtag"></i> Roll Number</label>
+                        <input type="text" id="rollNumber" class="form-input" 
+                               placeholder="Enter roll number" required>
+                        <small>Must be sequential starting from 1</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="studentName"><i class="fas fa-user"></i> Student Name</label>
+                        <input type="text" id="studentName" class="form-input" 
+                               placeholder="Enter student name" required>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary btn-block">
+                        <i class="fas fa-save"></i> Save Student
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Camera Capture -->
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-camera"></i> Capture Training Images
+            </div>
+            <div class="card-body">
+                <div class="camera-container">
+                    <video id="video" autoplay playsinline></video>
+                    <canvas id="canvas" style="display: none;"></canvas>
+                    <div class="camera-overlay" id="cameraOverlay">
+                        <i class="fas fa-video"></i>
+                        <p>Click "Start Camera" to begin</p>
+                    </div>
+                </div>
+                
+                <div class="capture-info">
+                    <div class="capture-count">
+                        <span>Images Captured:</span>
+                        <strong id="imageCount">0 / 30</strong>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="captureProgress"></div>
+                    </div>
+                </div>
+                
+                <div class="button-group">
+                    <button class="btn btn-success" onclick="startCamera()">
+                        <i class="fas fa-video"></i> Start Camera
+                    </button>
+                    <button class="btn btn-primary" onclick="captureImages()" id="captureBtn" disabled>
+                        <i class="fas fa-camera"></i> Capture Images
+                    </button>
+                    <button class="btn btn-danger" onclick="stopCamera()">
+                        <i class="fas fa-stop"></i> Stop Camera
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Enrolled Students List -->
+    <div class="card" style="margin-top: 30px;">
+        <div class="card-header">
+            <i class="fas fa-users"></i> Enrolled Students
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Roll Number</th>
+                            <th>Name</th>
+                            <th>Images</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="studentsList"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let video = document.getElementById('video');
+    let canvas = document.getElementById('canvas');
+    let ctx = canvas.getContext('2d');
+    let stream = null;
+    let captureInterval = null;
+    let imageCount = 0;
+    let currentStudent = { name: '', roll: '' };
+
+    // Start camera
+    async function startCamera() {
+        try {
+            stream = await navigator.mediaDevices.getUserMedia({ 
+                video: { width: 640, height: 480 } 
+            });
+            video.srcObject = stream;
+            document.getElementById('cameraOverlay').style.display = 'none';
+            document.getElementById('captureBtn').disabled = false;
+            showNotification('Camera started', 'success');
+        } catch (error) {
+            showNotification('Camera access denied: ' + error.message, 'error');
+        }
+    }
+
+    // Stop camera
+    function stopCamera() {
+        if (stream) {
+            stream.getTracks().forEach(track => track.stop());
+            video.srcObject = null;
+            document.getElementById('cameraOverlay').style.display = 'flex';
+            document.getElementById('captureBtn').disabled = true;
+        }
+        if (captureInterval) {
+            clearInterval(captureInterval);
+        }
+    }
+
+    // Capture images
+    function captureImages() {
+        currentStudent.name = document.getElementById('studentName').value;
+        currentStudent.roll = document.getElementById('rollNumber').value;
+        
+        if (!currentStudent.name || !currentStudent.roll) {
+            showNotification('Please save student information first', 'error');
+            return;
+        }
+        
+        imageCount = 0;
+        document.getElementById('captureBtn').disabled = true;
+        
+        captureInterval = setInterval(async () => {
+            if (imageCount >= 30) {
+                clearInterval(captureInterval);
+                document.getElementById('captureBtn').disabled = false;
+                showNotification('Image capture completed!', 'success');
+                stopCamera();
+                return;
+            }
+            
+            // Capture frame
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            ctx.drawImage(video, 0, 0);
+            
+            const imageData = canvas.toDataURL('image/jpeg');
+            imageCount++;
+            
+            // Update UI
+            document.getElementById('imageCount').textContent = `${imageCount} / 30`;
+            document.getElementById('captureProgress').style.width = `${(imageCount/30)*100}%`;
+            
+            // Save image
+            await fetch('/api/students/save-image', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    name: currentStudent.name,
+                    roll_number: currentStudent.roll,
+                    image: imageData,
+                    count: imageCount
+                })
+            });
+        }, 300);
+    }
+
+    // Enroll student
+    document.getElementById('enrollForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const name = document.getElementById('studentName').value;
+        const rollNumber = document.getElementById('rollNumber').value;
+        
+        try {
+            const response = await fetch('/api/students/enroll', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, roll_number: rollNumber })
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                showNotification('Student enrolled successfully!', 'success');
+                loadStudents();
+            } else {
+                showNotification('Enrollment failed: ' + result.error, 'error');
+            }
+        } catch (error) {
+            showNotification('Error: ' + error.message, 'error');
+        }
+    });
+
+    // Load students list
+    async function loadStudents() {
+        try {
+            const response = await fetch('/api/students');
+            const data = await response.json();
+            
+            const tbody = document.getElementById('studentsList');
+            tbody.innerHTML = '';
+            
+            data.students.forEach(student => {
+                const row = tbody.insertRow();
+                row.innerHTML = `
+                    <td>${student['Roll Number']}</td>
+                    <td>${student.Name}</td>
+                    <td><span class="badge badge-success">30</span></td>
+                    <td><span class="badge badge-info">Enrolled</span></td>
+                `;
+            });
+        } catch (error) {
+            console.error('Error loading students:', error);
+        }
+    }
+
+    loadStudents();
+</script>
+{% endblock %}

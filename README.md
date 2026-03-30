@@ -58,6 +58,8 @@ pip install -r Requirements/GPU_Req.txt
 
 ## **🚀 Installation & Setup**
 
+### Local Development
+
 1. **Clone the repository:**
 ```bash
 git clone https://github.com/tusharsharma20021114-rgb/Web-based-Smart-attendence-system-using-ML.git
@@ -76,89 +78,83 @@ sudo systemctl start mongodb
 mongod
 ```
 
-4. **Run the application:**
+4. **Run the web application:**
+```bash
+python3 app.py
+# Access at http://localhost:5000
+```
 
-**Option A - Desktop GUI (Original):**
+### Alternative Interfaces
+
+**Desktop GUI (Original):**
 ```bash
 python3 UI.py
 ```
 
-**Option B - Modern Desktop GUI:**
+**Modern Desktop GUI:**
 ```bash
 python3 UI_modern.py
 ```
 
-**Option C - Web Interface:**
-```bash
-python3 app_web.py
-# Access at http://localhost:5000
-```
-
-**Option D - REST API Only:**
+**REST API Only:**
 ```bash
 python3 api.py
-# API at http://localhost:5000/api
 ```
+
+### Cloud Deployment
+
+Deploy to Render, Railway, or Heroku with one click!
+
+See [DEPLOYMENT.md](DEPLOYMENT.md) for detailed deployment instructions.
+
+**Quick Deploy to Render:**
+1. Fork this repository
+2. Create account on [render.com](https://render.com)
+3. Click "New +" → "Web Service"
+4. Connect your GitHub repo
+5. Deploy automatically!
+
+Your app will be live at: `https://your-app-name.onrender.com`
 
 ## **📖 Usage Guide**
 
-### Desktop GUI Workflow
+### Web Application (Recommended)
 
-1. **Enroll Students**
-   - Enter roll number and name in the right panel
-   - Click "Take Images" to capture 30+ training photos
-   - Student automatically enrolled in all subjects
+1. **Access Dashboard**
+   - Navigate to http://localhost:5000
+   - View real-time statistics
+   - Quick access to all features
 
-2. **Train Model**
-   - Click "Train The Model" after enrolling students
-   - Progress bar shows training status (~30-40 seconds)
-   - Model saves to `Model/Face_recognition.MODEL`
+2. **Enroll Students** (`/enroll`)
+   - Enter roll number and name
+   - Click "Save Student"
+   - Click "Start Camera" to begin image capture
+   - Click "Capture Images" to take 30 training photos
+   - Images saved automatically
 
-3. **Mark Attendance**
-   - Select subject (Hindi/English) from left panel
-   - Click "Take Attendance"
-   - System recognizes faces automatically
-   - Press 'Q' to exit
+3. **Train Model** (from Dashboard)
+   - Click "Train Model" action card
+   - Wait 30-40 seconds for training
+   - Model saves automatically
 
-4. **View Records**
-   - Click "Show Attendance" to display records
-   - Click "Clear" to reset display
-   - Data stored in MongoDB and CSV files
+4. **Mark Attendance** (`/attendance`)
+   - Select subject (Hindi/English)
+   - Click "Start Recognition"
+   - System recognizes faces in real-time
+   - Recognized students appear in the list
+   - Click "Save Attendance" to confirm
 
-### Web Interface Workflow
-
-1. **Start Server:** `python3 app_web.py`
-2. **Open Browser:** http://localhost:5000
-3. **Dashboard:** View real-time statistics
-4. **Manage:** Enroll students, view attendance
-5. **Export:** Download CSV reports
-
-### API Usage
-
-See [API_DOCUMENTATION.md](API_DOCUMENTATION.md) for complete reference.
-
-**Quick Examples:**
-```bash
-# Health check
-curl http://localhost:5000/api/health
-
-# Get all students
-curl http://localhost:5000/api/students
-
-# Get attendance
-curl http://localhost:5000/api/attendance/hindi
-
-# Enroll student
-curl -X POST http://localhost:5000/api/students \
-  -H "Content-Type: application/json" \
-  -d '{"name":"John Doe","roll_number":"1"}'
-```
+5. **View Records** (`/records`)
+   - Switch between Hindi/English tabs
+   - Search and filter records
+   - Sort by any column
+   - Export to CSV
 
 ## **🏗️ Project Structure**
 
 ```
-├── api.py                     # REST API server
-├── app_web.py                 # Web application with Flask
+├── app.py                     # Main Flask web application ⭐
+├── api.py                     # REST API server (standalone)
 ├── config.py                  # Configuration settings
 ├── UI.py                      # Original Tkinter GUI
 ├── UI_modern.py              # Modern styled Tkinter GUI
@@ -166,18 +162,26 @@ curl -X POST http://localhost:5000/api/students \
 ├── Model_train.py            # Model training script
 ├── Recognizer.py             # Face recognition & attendance
 ├── embedding.py              # FaceNet embedding extraction
-├── align.py                  # Face alignment utilities
+├── templates/                # HTML templates
+│   ├── base.html            # Base template with navbar
+│   ├── dashboard.html       # Main dashboard
+│   ├── enroll.html          # Student enrollment page
+│   ├── attendance.html      # Attendance marking page
+│   └── records.html         # View records page
+├── static/                   # Frontend assets
+│   ├── css/style.css        # Modern CSS styling
+│   └── js/main.js           # JavaScript utilities
 ├── FaceDetection/            # Face detection module
 ├── Model/                    # Trained models
 ├── Model_architecture/       # Neural network architecture
 ├── MongoDB/                  # Database operations
 ├── PreTrained_model/        # FaceNet pre-trained model
-├── Requirements/            # Dependency files
 ├── people/                  # Student image datasets
 ├── *_attendance/            # Attendance records (CSV)
-├── templates/               # HTML templates
-├── static/                  # CSS and JavaScript
-└── images/                  # Documentation assets
+├── Procfile                 # Heroku deployment
+├── render.yaml              # Render deployment
+├── vercel.json              # Vercel deployment
+└── requirements.txt         # Python dependencies
 ```
 
 ## **🧠 Model Architecture**
@@ -270,6 +274,7 @@ Full documentation: [API_DOCUMENTATION.md](API_DOCUMENTATION.md)
 
 - [API Documentation](API_DOCUMENTATION.md) - Complete REST API reference
 - [Setup Guide](SETUP.md) - Detailed installation instructions
+- [Deployment Guide](DEPLOYMENT.md) - Cloud deployment instructions ⭐
 - [Contributing Guidelines](CONTRIBUTING.md) - How to contribute
 
 ## **🤝 Contributing**

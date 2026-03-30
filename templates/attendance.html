@@ -1,0 +1,191 @@
+{% extends "base.html" %}
+
+{% block title %}Take Attendance - Smart Attendance{% endblock %}
+
+{% block content %}
+<div class="page-container">
+    <div class="page-header">
+        <h1><i class="fas fa-camera"></i> Take Attendance</h1>
+        <p>Mark attendance using face recognition</p>
+    </div>
+
+    <div class="attendance-grid">
+        <!-- Subject Selection & Camera -->
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-video"></i> Live Recognition
+            </div>
+            <div class="card-body">
+                <div class="form-group">
+                    <label><i class="fas fa-book"></i> Select Subject</label>
+                    <div class="subject-selector">
+                        <label class="subject-option">
+                            <input type="radio" name="subject" value="hindi" checked>
+                            <span><i class="fas fa-book"></i> Hindi</span>
+                        </label>
+                        <label class="subject-option">
+                            <input type="radio" name="subject" value="english">
+                            <span><i class="fas fa-book-open"></i> English</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="camera-container">
+                    <video id="attendanceVideo" autoplay playsinline></video>
+                    <canvas id="attendanceCanvas" style="display: none;"></canvas>
+                    <div class="camera-overlay" id="attendanceOverlay">
+                        <i class="fas fa-video-slash"></i>
+                        <p>Click "Start Recognition" to begin</p>
+                    </div>
+                    <div class="recognition-info" id="recognitionInfo" style="display: none;"></div>
+                </div>
+
+                <div class="button-group">
+                    <button class="btn btn-success btn-lg" onclick="startRecognition()">
+                        <i class="fas fa-play"></i> Start Recognition
+                    </button>
+                    <button class="btn btn-danger btn-lg" onclick="stopRecognition()">
+                        <i class="fas fa-stop"></i> Stop Recognition
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recognized Students -->
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-check-circle"></i> Recognized Students
+            </div>
+            <div class="card-body">
+                <div id="recognizedList" class="recognized-list">
+                    <p class="empty-state">No students recognized yet</p>
+                </div>
+                
+                <button class="btn btn-primary btn-block" onclick="saveAttendance()">
+                    <i class="fas fa-save"></i> Save Attendance
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let attendanceVideo = document.getElementById('attendanceVideo');
+    let attendanceCanvas = document.getElementById('attendanceCanvas');
+    let attendanceCtx = attendanceCanvas.getContext('2d');
+    let attendanceStream = null;
+    let recognitionInterval = null;
+    let recognizedStudents = new Set();
+
+    async function startRecognition() {
+        try {
+            attendanceStream = await navigator.mediaDevices.getUserMedia({ 
+                video: { width: 640, height: 480 } 
+            });
+            attendanceVideo.srcObject = attendanceStream;
+            document.getElementById('attendanceOverlay').style.display = 'none';
+            document.getElementById('recognitionInfo').style.display = 'block';
+            
+            showNotification('Recognition started', 'success');
+            
+            // Start recognition loop
+            recognitionInterval = setInterval(recognizeFrame, 1000);
+        } catch (error) {
+            showNotification('Camera access denied: ' + error.message, 'error');
+        }
+    }
+
+    function stopRecognition() {
+        if (attendanceStream) {
+            attendanceStream.getTracks().forEach(track => track.stop());
+            attendanceVideo.srcObject = null;
+            document.getElementById('attendanceOverlay').style.display = 'flex';
+            document.getElementById('recognitionInfo').style.display = 'none';
+        }
+        if (recognitionInterval) {
+            clearInterval(recognitionInterval);
+        }
+    }
+
+    async function recognizeFrame() {
+        const subject = document.querySelector('input[name="subject"]:checked').value;
+        
+        // Capture current frame
+        attendanceCanvas.width = attendanceVideo.videoWidth;
+        attendanceCanvas.height = attendanceVideo.videoHeight;
+        attendanceCtx.drawImage(attendanceVideo, 0, 0);
+        
+        const imageData = attendanceCanvas.toDataURL('image/jpeg');
+        
+        try {
+            const response = await fetch('/api/attendance/mark', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ image: imageData, subject })
+            });
+            
+            const result = await response.json();
+            
+            if (result.success && result.recognized) {
+                result.students.forEach(student => {
+                    if (!recognizedStudents.has(student.name)) {
+                        recognizedStudents.add(student.name);
+                        addRecognizedStudent(student);
+                    }
+                });
+                
+                document.getElementById('recognitionInfo').innerHTML = `
+                    <div class="recognition-badge success">
+                        <i class="fas fa-check-circle"></i> 
+                        ${result.students.length} face(s) detected
+                    </div>
+                `;
+            } else {
+                document.getElementById('recognitionInfo').innerHTML = `
+                    <div class="recognition-badge warning">
+                        <i class="fas fa-search"></i> Scanning...
+                    </div>
+                `;
+            }
+        } catch (error) {
+            console.error('Recognition error:', error);
+        }
+    }
+
+    function addRecognizedStudent(student) {
+        const list = document.getElementById('recognizedList');
+        
+        // Remove empty state
+        const emptyState = list.querySelector('.empty-state');
+        if (emptyState) emptyState.remove();
+        
+        const item = document.createElement('div');
+        item.className = 'recognized-item';
+        item.innerHTML = `
+            <div class="student-avatar">${student.name.charAt(0).toUpperCase()}</div>
+            <div class="student-info">
+                <strong>${student.name}</strong>
+                <small>Roll: ${student.roll_number} | Confidence: ${(student.confidence * 100).toFixed(1)}%</small>
+            </div>
+            <i class="fas fa-check-circle" style="color: #28a745; font-size: 24px;"></i>
+        `;
+        list.appendChild(item);
+    }
+
+    async function saveAttendance() {
+        if (recognizedStudents.size === 0) {
+            showNotification('No students recognized yet', 'warning');
+            return;
+        }
+        
+        const subject = document.querySelector('input[name="subject"]:checked').value;
+        showNotification(`Attendance saved for ${recognizedStudents.size} students in ${subject}`, 'success');
+        
+        // Reset
+        setTimeout(() => {
+            recognizedStudents.clear();
+            document.getElementById('recognizedList').innerHTML = '<p class="empty-state">No students recognized yet</p>';
+        }, 2000);
+    }
+</script>
+{% endblock %}

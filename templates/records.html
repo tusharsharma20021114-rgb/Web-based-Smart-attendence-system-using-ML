@@ -1,0 +1,168 @@
+{% extends "base.html" %}
+
+{% block title %}Attendance Records - Smart Attendance{% endblock %}
+
+{% block content %}
+<div class="page-container">
+    <div class="page-header">
+        <h1><i class="fas fa-table"></i> Attendance Records</h1>
+        <p>View and export attendance data</p>
+    </div>
+
+    <!-- Subject Tabs -->
+    <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('hindi')">
+            <i class="fas fa-book"></i> Hindi
+        </button>
+        <button class="tab-btn" onclick="switchTab('english')">
+            <i class="fas fa-book-open"></i> English
+        </button>
+    </div>
+
+    <!-- Records Card -->
+    <div class="card">
+        <div class="card-header">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span><i class="fas fa-list"></i> <span id="currentSubject">Hindi</span> Attendance</span>
+                <button class="btn btn-sm btn-success" onclick="exportCSV()">
+                    <i class="fas fa-download"></i> Export CSV
+                </button>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="table-controls">
+                <input type="text" id="searchInput" class="form-input" 
+                       placeholder="Search by name or roll number..." 
+                       onkeyup="filterTable()">
+                <button class="btn btn-info" onclick="refreshRecords()">
+                    <i class="fas fa-sync"></i> Refresh
+                </button>
+            </div>
+
+            <div class="table-responsive">
+                <table class="data-table" id="recordsTable">
+                    <thead>
+                        <tr>
+                            <th onclick="sortTable(0)">Roll Number <i class="fas fa-sort"></i></th>
+                            <th onclick="sortTable(1)">Name <i class="fas fa-sort"></i></th>
+                            <th onclick="sortTable(2)">Attendance <i class="fas fa-sort"></i></th>
+                            <th>Percentage</th>
+                        </tr>
+                    </thead>
+                    <tbody id="recordsBody"></tbody>
+                </table>
+            </div>
+
+            <div class="table-footer">
+                <span>Total Students: <strong id="totalCount">0</strong></span>
+                <span>Average Attendance: <strong id="avgAttendance">0</strong></span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let currentSubject = 'hindi';
+    let recordsData = [];
+
+    async function switchTab(subject) {
+        currentSubject = subject;
+        document.getElementById('currentSubject').textContent = 
+            subject.charAt(0).toUpperCase() + subject.slice(1);
+        
+        // Update active tab
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        event.target.closest('.tab-btn').classList.add('active');
+        
+        await loadRecords(subject);
+    }
+
+    async function loadRecords(subject) {
+        try {
+            const response = await fetch(`/api/attendance/${subject}`);
+            const data = await response.json();
+            
+            if (data.success) {
+                recordsData = data.records;
+                displayRecords(recordsData);
+            } else {
+                showNotification('Failed to load records: ' + data.error, 'error');
+            }
+        } catch (error) {
+            showNotification('Error loading records: ' + error.message, 'error');
+        }
+    }
+
+    function displayRecords(records) {
+        const tbody = document.getElementById('recordsBody');
+        tbody.innerHTML = '';
+        
+        if (records.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4" style="text-align: center;">No records found</td></tr>';
+            return;
+        }
+        
+        let totalAttendance = 0;
+        const maxAttendance = 20; // Assuming 20 classes
+        
+        records.forEach(record => {
+            const attendance = record.Attendance || 0;
+            totalAttendance += attendance;
+            const percentage = ((attendance / maxAttendance) * 100).toFixed(1);
+            
+            const row = tbody.insertRow();
+            row.innerHTML = `
+                <td>${record.Roll_number}</td>
+                <td>${record.Name}</td>
+                <td><span class="badge badge-primary">${attendance}</span></td>
+                <td>
+                    <div class="progress-bar-small">
+                        <div class="progress-fill-small" style="width: ${percentage}%"></div>
+                    </div>
+                    <small>${percentage}%</small>
+                </td>
+            `;
+        });
+        
+        // Update footer stats
+        document.getElementById('totalCount').textContent = records.length;
+        document.getElementById('avgAttendance').textContent = 
+            (totalAttendance / records.length).toFixed(2);
+    }
+
+    function filterTable() {
+        const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+        const filtered = recordsData.filter(record => 
+            record.Name.toLowerCase().includes(searchTerm) ||
+            record.Roll_number.toString().includes(searchTerm)
+        );
+        displayRecords(filtered);
+    }
+
+    function sortTable(columnIndex) {
+        const keys = ['Roll_number', 'Name', 'Attendance'];
+        const key = keys[columnIndex];
+        
+        recordsData.sort((a, b) => {
+            if (typeof a[key] === 'string') {
+                return a[key].localeCompare(b[key]);
+            }
+            return a[key] - b[key];
+        });
+        
+        displayRecords(recordsData);
+    }
+
+    function refreshRecords() {
+        loadRecords(currentSubject);
+        showNotification('Records refreshed', 'success');
+    }
+
+    function exportCSV() {
+        window.open(`/api/attendance/${currentSubject}/export`, '_blank');
+    }
+
+    // Load initial data
+    loadRecords('hindi');
+</script>
+{% endblock %}

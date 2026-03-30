@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Smart Attendance{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <div class="page-header">
+        <h1><i class="fas fa-chart-line"></i> Dashboard</h1>
+        <p class="date-display" id="currentDate"></p>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="stats-grid" id="statsGrid">
+        <div class="stat-card">
+            <div class="stat-icon"><i class="fas fa-users"></i></div>
+            <div class="stat-content">
+                <div class="stat-value" id="totalStudents">0</div>
+                <div class="stat-label">Total Students</div>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon"><i class="fas fa-book"></i></div>
+            <div class="stat-content">
+                <div class="stat-value" id="hindiAvg">0</div>
+                <div class="stat-label">Hindi Avg Attendance</div>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon"><i class="fas fa-book-open"></i></div>
+            <div class="stat-content">
+                <div class="stat-value" id="englishAvg">0</div>
+                <div class="stat-label">English Avg Attendance</div>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon"><i class="fas fa-brain"></i></div>
+            <div class="stat-content">
+                <div class="stat-value" id="modelStatus">❌</div>
+                <div class="stat-label">Model Status</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="quick-actions">
+        <h2><i class="fas fa-bolt"></i> Quick Actions</h2>
+        <div class="action-grid">
+            <a href="/enroll" class="action-card">
+                <i class="fas fa-user-plus"></i>
+                <h3>Enroll Student</h3>
+                <p>Add new students and capture training images</p>
+            </a>
+            
+            <a href="/attendance" class="action-card">
+                <i class="fas fa-camera"></i>
+                <h3>Take Attendance</h3>
+                <p>Mark attendance using face recognition</p>
+            </a>
+            
+            <a href="/records" class="action-card">
+                <i class="fas fa-table"></i>
+                <h3>View Records</h3>
+                <p>Check attendance records and export data</p>
+            </a>
+            
+            <div class="action-card" onclick="trainModel()">
+                <i class="fas fa-brain"></i>
+                <h3>Train Model</h3>
+                <p>Train the face recognition model</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="recent-activity">
+        <h2><i class="fas fa-clock"></i> System Information</h2>
+        <div class="info-grid">
+            <div class="info-item">
+                <strong>MongoDB:</strong> <span id="mongoStatus">Checking...</span>
+            </div>
+            <div class="info-item">
+                <strong>Model:</strong> <span id="modelInfo">Checking...</span>
+            </div>
+            <div class="info-item">
+                <strong>Subjects:</strong> <span>Hindi, English</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Load dashboard data
+    async function loadDashboard() {
+        try {
+            // Get health status
+            const health = await fetch('/api/health').then(r => r.json());
+            document.getElementById('modelStatus').textContent = health.model_loaded ? '✅' : '❌';
+            document.getElementById('mongoStatus').textContent = health.mongodb_connected ? '✅ Connected' : '❌ Disconnected';
+            document.getElementById('modelInfo').textContent = health.model_loaded ? '✅ Loaded' : '⚠️ Not Loaded';
+            
+            // Get students
+            const students = await fetch('/api/students').then(r => r.json());
+            document.getElementById('totalStudents').textContent = students.count || 0;
+            
+            // Get stats
+            const stats = await fetch('/api/stats').then(r => r.json());
+            if (stats.success) {
+                document.getElementById('hindiAvg').textContent = stats.stats.hindi.average_attendance;
+                document.getElementById('englishAvg').textContent = stats.stats.english.average_attendance;
+            }
+        } catch (error) {
+            console.error('Error loading dashboard:', error);
+        }
+    }
+
+    // Display current date
+    const dateDisplay = document.getElementById('currentDate');
+    const now = new Date();
+    dateDisplay.textContent = now.toLocaleDateString('en-US', { 
+        weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' 
+    });
+
+    // Train model function
+    async function trainModel() {
+        if (!confirm('Start model training? This may take 30-40 seconds.')) return;
+        
+        showNotification('Training started...', 'info');
+        
+        try {
+            const response = await fetch('/api/train', { method: 'POST' });
+            const result = await response.json();
+            
+            if (result.success) {
+                showNotification('Model training started! Check console for progress.', 'success');
+            } else {
+                showNotification('Training failed: ' + result.error, 'error');
+            }
+        } catch (error) {
+            showNotification('Error: ' + error.message, 'error');
+        }
+    }
+
+    // Load data on page load
+    loadDashboard();
+</script>
+{% endblock %}
