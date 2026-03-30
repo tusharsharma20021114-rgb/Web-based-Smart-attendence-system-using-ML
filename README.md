@@ -15,17 +15,18 @@ An intelligent, automated attendance system leveraging facial recognition techno
 
 ## **✨ Features**
 
-- 🎯 Real-time face detection and recognition using OpenCV and Haar Cascade
-- 🧠 Deep learning model with FaceNet embeddings for accurate face recognition
-- 💾 MongoDB integration for persistent data storage
-- 📚 Multi-subject support (easily extensible)
-- 📸 Automated student enrollment with image capture
-- 📊 CSV export functionality for attendance records
-- 🖥️ Multiple UI options: Desktop GUI (Tkinter) and Web Interface (Flask)
-- 🌐 RESTful API for third-party integrations
-- 📈 Progress tracking for model training
-- 🎨 Modern, responsive design with enhanced styling
-- 📉 Real-time statistics dashboard
+- 🔐 **User Authentication** - Secure login and registration system
+- 👤 **Student Self-Registration** - Students can create accounts and enroll themselves
+- 📸 **Webcam Integration** - Capture training images directly from browser
+- 🎯 **Real-time Face Recognition** - Mark attendance using AI-powered face detection
+- 🧠 **Deep Learning Model** - FaceNet embeddings with custom neural network
+- � **MongoDB Database** - Persistent storage for users and attendance
+- � **Multi-Subject Support** t- Hindi and English (easily extensible)
+- 📊 **Statistics Dashboard** - Real-time attendance analytics
+- � **CSV Export** - Download attendance records
+- 🎨 **Modern UI** - Responsive design with smooth animations
+- 🌐 **REST API** - Complete API for all operations
+- 👨‍� **Role-Based Access** - Admin and student roles with different permissions
 
 ## **🛠️ Technology Stack**
 
@@ -118,37 +119,71 @@ Your app will be live at: `https://your-app-name.onrender.com`
 
 ## **📖 Usage Guide**
 
-### Web Application (Recommended)
+### For Students
 
-1. **Access Dashboard**
-   - Navigate to http://localhost:5000
-   - View real-time statistics
-   - Quick access to all features
+1. **Register Account**
+   - Go to http://localhost:5000
+   - Click "Register as Student"
+   - Enter your name, email, roll number, and password
+   - Click "Register"
 
-2. **Enroll Students** (`/enroll`)
-   - Enter roll number and name
-   - Click "Save Student"
-   - Click "Start Camera" to begin image capture
-   - Click "Capture Images" to take 30 training photos
-   - Images saved automatically
+2. **Upload Training Images**
+   - Login with your credentials
+   - Go to "Upload Images" page
+   - Click "Start Camera"
+   - Click "Capture Images" (30 images will be taken automatically)
+   - Images saved to your profile
 
-3. **Train Model** (from Dashboard)
-   - Click "Train Model" action card
-   - Wait 30-40 seconds for training
-   - Model saves automatically
-
-4. **Mark Attendance** (`/attendance`)
+3. **Mark Attendance**
+   - Go to "Mark Attendance" page
    - Select subject (Hindi/English)
    - Click "Start Recognition"
-   - System recognizes faces in real-time
-   - Recognized students appear in the list
-   - Click "Save Attendance" to confirm
+   - Look at the camera
+   - Attendance marked automatically when face is recognized!
 
-5. **View Records** (`/records`)
-   - Switch between Hindi/English tabs
-   - Search and filter records
-   - Sort by any column
+4. **View Your Records**
+   - Go to "Records" page
+   - See your attendance for all subjects
+   - Track your attendance percentage
+
+### For Admin
+
+1. **Login**
+   - Email: `admin@admin.com`
+   - Password: `admin123`
+
+2. **Train Model**
+   - After students upload images
+   - Click "Train Model" from dashboard
+   - Wait 30-40 seconds
+   - Model ready for recognition!
+
+3. **View All Records**
+   - Access all student attendance
    - Export to CSV
+   - View statistics
+
+### API Usage
+
+All features accessible via REST API:
+
+```bash
+# Login
+curl -X POST http://localhost:5000/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"admin@admin.com","password":"admin123"}'
+
+# Get students
+curl http://localhost:5000/api/students
+
+# Get attendance
+curl http://localhost:5000/api/attendance/hindi
+
+# Get statistics
+curl http://localhost:5000/api/stats
+```
+
+See [API_DOCUMENTATION.md](API_DOCUMENTATION.md) for complete API reference.
 
 ## **🏗️ Project Structure**
 
