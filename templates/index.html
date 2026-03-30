@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Attendance System | Ushar Sharma</title>
+    <link rel="stylesheet" href="../static/style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>🎓 Smart Attendance System</h1>
+            <p>Powered by Machine Learning & Face Recognition</p>
+            <div class="date-display" id="dateDisplay"></div>
+        </div>
+
+        <!-- Statistics Dashboard -->
+        <div style="padding: 30px;">
+            <h2 style="text-align: center; margin-bottom: 20px; color: #333;">📊 Dashboard</h2>
+            <div class="stats-grid" id="statsContainer"></div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Left Card - Attendance Management -->
+            <div class="card">
+                <div class="card-header">📋 Attendance Management</div>
+                
+                <div class="form-group">
+                    <label class="form-label">Select Subject</label>
+                    <div class="radio-group">
+                        <label class="radio-label">
+                            <input type="radio" name="subject" value="hindi" checked>
+                            <span>Hindi</span>
+                        </label>
+                        <label class="radio-label">
+                            <input type="radio" name="subject" value="english">
+                            <span>English</span>
+                        </label>
+                    </div>
+                </div>
+
+                <button class="btn btn-success btn-block" onclick="takeAttendance()">
+                    📸 Take Attendance
+                </button>
+                
+                <button class="btn btn-info btn-block" onclick="showAttendance()">
+                    👁️ Show Attendance
+                </button>
+                
+                <button class="btn btn-danger btn-block" onclick="clearTable()">
+                    🗑️ Clear Display
+                </button>
+
+                <div class="table-container">
+                    <table id="attendanceTable">
+                        <thead>
+                            <tr>
+                                <th>Roll No</th>
+                                <th>Name</th>
+                                <th>Attendance</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Right Card - Student Enrollment -->
+            <div class="card">
+                <div class="card-header">➕ New Student Enrollment</div>
+                
+                <form id="enrollForm" onsubmit="enrollStudent(event)">
+                    <div class="form-group">
+                        <label class="form-label" for="rollNumber">Roll Number</label>
+                        <input type="text" id="rollNumber" class="form-input" 
+                               placeholder="Enter roll number" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="studentName">Student Name</label>
+                        <input type="text" id="studentName" class="form-input" 
+                               placeholder="Enter student name" required>
+                    </div>
+                    
+                    <button type="button" class="btn btn-primary btn-block" onclick="captureImages()">
+                        📷 Take Images
+                    </button>
+                    
+                    <button type="submit" class="btn btn-success btn-block">
+                        💾 Save Profile
+                    </button>
+                </form>
+
+                <div style="margin-top: 30px;">
+                    <button class="btn btn-success btn-block" onclick="trainModel()">
+                        🧠 Train The Model
+                    </button>
+                    <div class="progress-bar" id="progressBar" style="display: none;">
+                        <div class="progress-fill" id="progressFill">0%</div>
+                    </div>
+                </div>
+
+                <div class="table-container" style="margin-top: 20px;">
+                    <table id="studentTable">
+                        <thead>
+                            <tr>
+                                <th>Roll No</th>
+                                <th>Name</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="../static/app.js"></script>
+    <script>
+        // Display current date
+        const dateDisplay = document.getElementById('dateDisplay');
+        const now = new Date();
+        const options = { day: 'numeric', month: 'long', year: 'numeric' };
+        dateDisplay.textContent = now.toLocaleDateString('en-US', options);
+
+        // Take attendance function
+        function takeAttendance() {
+            const subject = document.querySelector('input[name="subject"]:checked').value;
+            showAlert('Starting attendance capture for ' + subject.toUpperCase() + '...', 'info');
+            // This would trigger the Python recognition script
+            fetch(`${API_BASE_URL}/attendance/start`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ subject })
+            });
+        }
+
+        // Show attendance function
+        function showAttendance() {
+            const subject = document.querySelector('input[name="subject"]:checked').value;
+            loadAttendance(subject);
+        }
+
+        // Clear table function
+        function clearTable() {
+            document.querySelector('#attendanceTable tbody').innerHTML = '';
+        }
+
+        // Capture images function
+        function captureImages() {
+            const name = document.getElementById('studentName').value;
+            const rollNumber = document.getElementById('rollNumber').value;
+            
+            if (!name || !rollNumber) {
+                showAlert('Please enter name and roll number first', 'error');
+                return;
+            }
+            
+            showAlert('Opening camera for image capture...', 'info');
+            // This would trigger the Python image capture script
+        }
+
+        // Train model function
+        function trainModel() {
+            showAlert('Starting model training...', 'info');
+            document.getElementById('progressBar').style.display = 'block';
+            
+            // Simulate progress
+            let progress = 0;
+            const interval = setInterval(() => {
+                progress += 10;
+                document.getElementById('progressFill').style.width = progress + '%';
+                document.getElementById('progressFill').textContent = progress + '%';
+                
+                if (progress >= 100) {
+                    clearInterval(interval);
+                    showAlert('Model training completed!', 'success');
+                    setTimeout(() => {
+                        document.getElementById('progressBar').style.display = 'none';
+                        document.getElementById('progressFill').style.width = '0%';
+                    }, 2000);
+                }
+            }, 1000);
+        }
+    </script>
+</body>
+</html>

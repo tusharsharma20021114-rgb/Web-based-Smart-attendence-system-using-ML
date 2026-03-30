@@ -1,0 +1,18 @@
+# Core Dependencies
+flask==2.3.0
+flask-cors==4.0.0
+opencv-python==4.8.0.74
+numpy==1.24.3
+pandas==2.0.3
+pymongo==4.5.0
+pillow==10.0.0
+
+# Machine Learning
+tensorflow==2.13.0
+keras==2.13.1
+
+# Optional for GPU
+# tensorflow-gpu==2.13.0
+
+# Development
+python-dotenv==1.0.0
